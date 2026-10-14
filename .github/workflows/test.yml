@@ -44,3 +44,32 @@ jobs:
           aws dynamodb get-item --table-name action-test --key '{"id":{"S":"1"}}'
           aws lambda list-functions
           homecloud version
+
+  # Download and verification only (HC_INSTALL_ONLY stops before the server
+  # starts): a signed release, an unsigned one, and the check turned off.
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { version: latest, verify: "true", expect: "signature OK" }
+          - { version: v0.5.0, verify: "true", expect: "signature OK" }
+          - { version: v0.4.1, verify: "true", expect: "is not signed" }
+          - { version: v0.5.0, verify: "false", expect: "verify-signature is false" }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install ${{ matrix.version }} (verify-signature ${{ matrix.verify }})
+        env:
+          HC_INSTALL_ONLY: "1"
+          HC_VERSION: ${{ matrix.version }}
+          HC_VERIFY_SIGNATURE: ${{ matrix.verify }}
+          EXPECT: ${{ matrix.expect }}
+        run: |
+          set -o pipefail
+          bash setup.sh | tee install.log
+          grep -q "$EXPECT" install.log
+          grep -q "checksum OK" install.log
