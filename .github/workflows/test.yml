@@ -60,6 +60,8 @@ jobs:
           - { version: v0.5.0, verify: "false", expect: "verify-signature is false" }
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Install ${{ matrix.version }} (verify-signature ${{ matrix.verify }})
         env:
           HC_INSTALL_ONLY: "1"
